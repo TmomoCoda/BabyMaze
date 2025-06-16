@@ -5,29 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Baby Maze Hunt</title>
   <style>
-    body, html { margin:0; padding:0; overflow:hidden; background:#faf3e0; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #faf3e0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
     canvas {
-      display:block;
-      margin:40px auto;
-      background:#ffffff;
-      border:2px solid #333;
-      box-shadow:0 20px 30px rgba(0,0,0,0.3);
+      background: #ffffff;
+      border: 2px solid #333;
+      box-shadow: 0 20px 30px rgba(0,0,0,0.3);
     }
     #gameOver {
-      position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-      background:rgba(0,0,0,0.7); color:white; padding:2rem; font-size:2rem;
-      display:none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 2rem;
+      font-size: 2rem;
+      display: none;
     }
     #restart {
-      position:absolute; top:calc(50% + 80px); left:50%; transform:translateX(-50%);
-      padding:0.5rem 1rem; font-size:1rem; display:none; cursor:pointer;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="600" height="600"></canvas>
   <div id="gameOver">😭 Baby is crying! Game Over!</div>
-  <button id="restart">Start New Game</button>
+  <button id="restart">Start Game</button>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -46,12 +64,26 @@
       [1,0,0,0,0,1,0,0,0,1],
       [1,1,1,1,1,1,1,1,1,1]
     ];
-    const TILE = canvas.width / GRID.length;
+    let TILE;
     const INITIAL_SPEED = 2;
-    const ISO_OFFSET_Y = 120;
+    let ISO_OFFSET_Y = 120;
+    const FOOD_EMOJIS = ['🍎','🍌','🥕','🍇','🍉','🍞','🍪','🍔','🍕','🍗','🍚','🍩','🍿','🍼','🥛','🥤'];
     let baby, food, timerId, timeStart, score, gameOver;
+    let currentFoodEmoji = '🍎';
+    let babyEmoji = '👶';
+
+    function resizeCanvas() {
+      const size = Math.min(window.innerWidth, window.innerHeight);
+      canvas.width = size;
+      canvas.height = size;
+      TILE = canvas.width / GRID.length;
+      ISO_OFFSET_Y = canvas.height / 2;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
 
     function init() {
+      resizeCanvas();
       baby = { x: TILE + TILE/2, y: TILE + TILE/2, r: 15, vx:0, vy:0, speed: INITIAL_SPEED };
       spawnFood();
       timeStart = Date.now();
@@ -71,6 +103,7 @@
         gy = Math.floor(Math.random() * GRID.length);
       } while (GRID[gy][gx] !== 0);
       food = { x: gx * TILE + TILE/2, y: gy * TILE + TILE/2, r: 12 };
+      currentFoodEmoji = FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
       timeStart = Date.now();
     }
 
@@ -103,7 +136,14 @@
       }
     });
 
-    restartBtn.addEventListener('click', init);
+    function startGame() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+      init();
+    }
+
+    restartBtn.addEventListener('click', startGame);
 
     function isWall(x, y) {
       const gx = Math.floor(x / TILE);
@@ -126,6 +166,8 @@
           baby.r += 2;
           baby.speed += 0.5;
           score += 1;
+          babyEmoji = '😊';
+          setTimeout(() => { babyEmoji = '👶'; }, 800);
           clearTimeout(timerId);
           spawnFood();
           timerId = setTimeout(endGame, 15000);
@@ -159,13 +201,13 @@
         ctx.font = `${food.r * 2}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🍎', food.x, food.y);
+        ctx.fillText(currentFoodEmoji, food.x, food.y);
       }
       // draw baby as emoji
       ctx.font = `${baby.r * 2}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('👶', baby.x, baby.y);
+      ctx.fillText(babyEmoji, baby.x, baby.y);
 
       ctx.restore();
 
@@ -187,7 +229,7 @@
       restartBtn.style.display = 'block';
     }
 
-    init();
+    // show start button on load
   </script>
 </body>
 </html>
