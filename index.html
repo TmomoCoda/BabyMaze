@@ -50,12 +50,16 @@
 <body>
   <canvas id="gameCanvas" width="600" height="600"></canvas>
   <div id="gameOver">😭 Baby is crying! Game Over!</div>
+  <div id="success" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.7); color:#fff; padding:2rem; font-size:2rem;">You Succeeded!</div>
   <button id="restart">Start Game</button>
+  <button id="nextStage" style="display:none; position:absolute; top:60%; left:50%; transform:translate(-50%,-50%); padding:0.5rem 1rem; font-size:1.2rem; cursor:pointer; background:#2196f3; color:white; border:none; border-radius:4px;">Start Stage 2</button>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const gameOverEl = document.getElementById('gameOver');
     const restartBtn = document.getElementById('restart');
+    const successEl = document.getElementById('success');
+    const nextStageBtn = document.getElementById('nextStage');
 
     const GRID = [
       [1,1,1,1,1,1,1,1,1,1],
@@ -70,11 +74,12 @@
       [1,1,1,1,1,1,1,1,1,1]
     ];
     let TILE;
-    const INITIAL_SPEED = 2;
+    const INITIAL_SPEED = 3;
     const FOOD_EMOJIS = ['🍎','🍌','🥕','🍇','🍉','🍞','🍪','🍔','🍕','🍗','🍚','🍩','🍿','🍼','🥛','🥤'];
     let baby, food, timerId, timeStart, score, gameOver;
     let currentFoodEmoji = '🍎';
     let babyEmoji = '👶';
+    let currentStage = 1;
 
     function resizeCanvas() {
       const size = Math.min(window.innerWidth, window.innerHeight);
@@ -94,6 +99,8 @@
       gameOver = false;
       gameOverEl.style.display = 'none';
       restartBtn.style.display = 'none';
+      successEl.style.display = 'none';
+      nextStageBtn.style.display = 'none';
       clearTimeout(timerId);
       timerId = setTimeout(endGame, 13000);
       requestAnimationFrame(loop);
@@ -136,10 +143,21 @@
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
+      currentStage = 1;
+      successEl.style.display = 'none';
+      nextStageBtn.style.display = 'none';
       init();
     }
 
     restartBtn.addEventListener('click', startGame);
+    nextStageBtn.addEventListener('click', startStage2);
+
+    function startStage2() {
+      currentStage = 2;
+      successEl.style.display = 'none';
+      nextStageBtn.style.display = 'none';
+      init();
+    }
 
     function isWall(x, y) {
       const gx = Math.floor(x / TILE);
@@ -160,6 +178,14 @@
           baby.r += 2;
           baby.speed += 0.5;
           score += 1;
+          if (score >= 10 && currentStage === 1) {
+            gameOver = true;
+            successEl.style.display = 'block';
+            nextStageBtn.style.display = 'block';
+            babyEmoji = '👶';
+            clearTimeout(timerId);
+            return;
+          }
           babyEmoji = '😊';
           setTimeout(() => { babyEmoji = '👶'; }, 800);
           clearTimeout(timerId);
