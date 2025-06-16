@@ -76,9 +76,10 @@
     let TILE;
     const INITIAL_SPEED = 3;
     const FOOD_EMOJIS = ['🍎','🍌','🥕','🍇','🍉','🍞','🍪','🍔','🍕','🍗','🍚','🍩','🍿','🍼','🥛','🥤'];
-    let baby, food, timerId, timeStart, score, gameOver;
+    let baby, food, mothers, timerId, timeStart, score, gameOver;
     let currentFoodEmoji = '🍎';
     let babyEmoji = '👶';
+    const MOTHER_EMOJI = '🤱';
     let currentStage = 1;
 
     function resizeCanvas() {
@@ -94,6 +95,10 @@
       resizeCanvas();
       baby = { x: TILE + TILE/2, y: TILE + TILE/2, r: 15, vx:0, vy:0, speed: INITIAL_SPEED };
       spawnFood();
+      mothers = [];
+      if (currentStage === 2) {
+        spawnMothers();
+      }
       timeStart = Date.now();
       score = 0;
       gameOver = false;
@@ -116,6 +121,18 @@
       food = { x: gx * TILE + TILE/2, y: gy * TILE + TILE/2, r: size };
       currentFoodEmoji = FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
       timeStart = Date.now();
+    }
+
+    function spawnMothers(count = 3) {
+      mothers = [];
+      for (let i = 0; i < count; i++) {
+        let gx, gy;
+        do {
+          gx = Math.floor(Math.random() * GRID.length);
+          gy = Math.floor(Math.random() * GRID.length);
+        } while (GRID[gy][gx] !== 0 || (gx === 1 && gy === 1));
+        mothers.push({ x: gx * TILE + TILE / 2, y: gy * TILE + TILE / 2, r: TILE * 0.4 });
+      }
     }
 
     function screenToBoard(sx, sy) {
@@ -226,6 +243,16 @@
           spawnFood();
           timerId = setTimeout(endGame, 13000);
         }
+
+        if (currentStage === 2) {
+          for (const m of mothers) {
+            const md = Math.hypot(baby.x - m.x, baby.y - m.y);
+            if (md < baby.r + m.r) {
+              endGame();
+              return;
+            }
+          }
+        }
       }
     }
 
@@ -236,8 +263,15 @@
       // draw cells
       for (let y = 0; y < GRID.length; y++) {
         for (let x = 0; x < GRID[y].length; x++) {
-          ctx.fillStyle = GRID[y][x] === 1 ? '#444' : '#ddd';
-          ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+          if (GRID[y][x] === 1) {
+            ctx.font = `${TILE * 0.8}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🌳', x * TILE + TILE / 2, y * TILE + TILE / 2);
+          } else {
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+          }
         }
       }
       // grid lines
@@ -259,13 +293,25 @@
       ctx.textBaseline = 'middle';
       ctx.fillText(babyEmoji, baby.x, baby.y);
 
+      if (currentStage === 2) {
+        for (const m of mothers) {
+          ctx.font = `${m.r * 2}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(MOTHER_EMOJI, m.x, m.y);
+        }
+      }
+
       ctx.restore();
 
       // HUD
       const timeLeft = Math.max(0, 13 - Math.floor((Date.now() - timeStart) / 1000));
-      ctx.fillStyle = '#000'; ctx.font = '16px Arial';
-      ctx.fillText(`Time: ${timeLeft}s`, 10, 20);
-      ctx.fillText(`Score: ${score}`, 10, 40);
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillRect(5,5,120,50);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 20px Arial';
+      ctx.fillText(`Time: ${timeLeft}s`, 10, 30);
+      ctx.fillText(`Score: ${score}`, 10, 50);
     }
 
     function loop() {
