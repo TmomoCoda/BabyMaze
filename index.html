@@ -98,10 +98,11 @@
       baby = { x: TILE + TILE/2, y: TILE + TILE/2, r: 15, vx:0, vy:0, speed: INITIAL_SPEED };
       spawnFood();
       mothers = [];
-      if (currentStage >= 2) {
-        const count = currentStage === 2 ? 3 : 5;
-        spawnMothers(count);
-      }
+      let count = 0;
+      if (currentStage === 1) count = 1;
+      else if (currentStage === 2) count = 2;
+      else if (currentStage === 3) count = 1;
+      if (count > 0) spawnMothers(count);
       timeStart = Date.now();
       score = 0;
       ammo = 0;
@@ -128,7 +129,7 @@
       timeStart = Date.now();
     }
 
-    function spawnMothers(count = 3) {
+    function spawnMothers(count = 1) {
       mothers = [];
       for (let i = 0; i < count; i++) {
         let gx, gy;
@@ -136,7 +137,8 @@
           gx = Math.floor(Math.random() * GRID.length);
           gy = Math.floor(Math.random() * GRID.length);
         } while (GRID[gy][gx] !== 0 || (gx === 1 && gy === 1));
-        mothers.push({ x: gx * TILE + TILE / 2, y: gy * TILE + TILE / 2, r: TILE * 0.4 });
+        const mother = { x: gx * TILE + TILE / 2, y: gy * TILE + TILE / 2, r: TILE * 0.4, vx: 0, vy: 0, speed: currentStage === 3 ? 0.5 : 0 };
+        mothers.push(mother);
       }
     }
 
@@ -264,9 +266,7 @@
           baby.r += 2;
           baby.speed += 0.5;
           score += 1;
-          if (currentStage === 2 && (currentFoodEmoji === '🍌' || currentFoodEmoji === '🍎')) {
-            ammo += 1;
-          }
+          ammo += 1;
           if (score >= 10 && currentStage === 1) {
             gameOver = true;
             successEl.style.display = 'block';
@@ -283,6 +283,14 @@
             clearTimeout(timerId);
             return;
           }
+          if (score >= 30 && currentStage === 3) {
+            gameOver = true;
+            successEl.style.display = 'block';
+            babyEmoji = '👶';
+            restartBtn.style.display = 'block';
+            clearTimeout(timerId);
+            return;
+          }
           babyEmoji = '😊';
           setTimeout(() => { babyEmoji = '👶'; }, 800);
           clearTimeout(timerId);
@@ -290,8 +298,21 @@
           timerId = setTimeout(endGame, 13000);
         }
 
-        if (currentStage >= 2) {
+        if (mothers.length > 0) {
           for (const m of mothers) {
+            if (currentStage === 3 && m.speed) {
+              const dx = baby.x - m.x;
+              const dy = baby.y - m.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist > 0) {
+                const stepX = (dx / dist) * m.speed;
+                const stepY = (dy / dist) * m.speed;
+                const nx = m.x + stepX;
+                const ny = m.y + stepY;
+                if (!isWall(nx, m.y)) m.x = nx;
+                if (!isWall(m.x, ny)) m.y = ny;
+              }
+            }
             const md = Math.hypot(baby.x - m.x, baby.y - m.y);
             if (md < baby.r + m.r) {
               endGame();
@@ -339,7 +360,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillText(babyEmoji, baby.x, baby.y);
 
-      if (currentStage >= 2) {
+      if (mothers.length > 0) {
         for (const m of mothers) {
           ctx.font = `${m.r * 2}px sans-serif`;
           ctx.textAlign = 'center';
