@@ -6,7 +6,13 @@
   <title>Baby Maze Hunt</title>
   <style>
     body, html { margin:0; padding:0; overflow:hidden; background:#faf3e0; }
-    canvas { display:block; margin:0 auto; background:#ffffff; border:2px solid #333; }
+    canvas {
+      display:block;
+      margin:40px auto;
+      background:#ffffff;
+      border:2px solid #333;
+      box-shadow:0 20px 30px rgba(0,0,0,0.3);
+    }
     #gameOver {
       position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
       background:rgba(0,0,0,0.7); color:white; padding:2rem; font-size:2rem;
@@ -42,6 +48,7 @@
     ];
     const TILE = canvas.width / GRID.length;
     const INITIAL_SPEED = 2;
+    const ISO_OFFSET_Y = 120;
     let baby, food, timerId, timeStart, score, gameOver;
 
     function init() {
@@ -67,13 +74,28 @@
       timeStart = Date.now();
     }
 
+    function screenToBoard(sx, sy) {
+      let x = sx - canvas.width / 2;
+      let y = sy - ISO_OFFSET_Y;
+      y /= 0.5;
+      const cos = Math.cos(Math.PI / 4);
+      const sin = Math.sin(Math.PI / 4);
+      const rx = x * cos - y * sin;
+      const ry = x * sin + y * cos;
+      return {
+        x: rx + GRID.length * TILE / 2,
+        y: ry + GRID.length * TILE / 2
+      };
+    }
+
     canvas.addEventListener('click', e => {
       if (gameOver) return;
       const rect = canvas.getBoundingClientRect();
       const tx = e.clientX - rect.left;
       const ty = e.clientY - rect.top;
-      const dx = tx - baby.x;
-      const dy = ty - baby.y;
+      const boardPos = screenToBoard(tx, ty);
+      const dx = boardPos.x - baby.x;
+      const dy = boardPos.y - baby.y;
       const dist = Math.hypot(dx, dy);
       if (dist > 0) {
         baby.vx = (dx / dist) * baby.speed;
@@ -113,6 +135,12 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(canvas.width / 2, ISO_OFFSET_Y);
+      ctx.scale(1, 0.5);
+      ctx.rotate(-Math.PI / 4);
+      ctx.translate(-GRID.length * TILE / 2, -GRID.length * TILE / 2);
+
       // draw cells
       for (let y = 0; y < GRID.length; y++) {
         for (let x = 0; x < GRID[y].length; x++) {
@@ -123,8 +151,8 @@
       // grid lines
       ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1;
       for (let i = 0; i <= GRID.length; i++) {
-        ctx.beginPath(); ctx.moveTo(i * TILE, 0); ctx.lineTo(i * TILE, canvas.height); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i * TILE); ctx.lineTo(canvas.width, i * TILE); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i * TILE, 0); ctx.lineTo(i * TILE, GRID.length * TILE); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * TILE); ctx.lineTo(GRID.length * TILE, i * TILE); ctx.stroke();
       }
       // draw food as emoji
       if (!gameOver) {
@@ -138,6 +166,9 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('👶', baby.x, baby.y);
+
+      ctx.restore();
+
       // HUD
       const timeLeft = Math.max(0, 15 - Math.floor((Date.now() - timeStart) / 1000));
       ctx.fillStyle = '#000'; ctx.font = '16px Arial';
