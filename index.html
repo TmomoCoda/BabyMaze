@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baby Maze Hunt</title>
+  <style>
+    body, html { margin:0; padding:0; overflow:hidden; background:#faf3e0; }
+    canvas { display:block; margin:0 auto; background:#ffffff; border:2px solid #333; }
+    #gameOver {
+      position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+      background:rgba(0,0,0,0.7); color:white; padding:2rem; font-size:2rem;
+      display:none;
+    }
+    #restart {
+      position:absolute; top:calc(50% + 80px); left:50%; transform:translateX(-50%);
+      padding:0.5rem 1rem; font-size:1rem; display:none; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <div id="gameOver">😭 Baby is crying! Game Over!</div>
+  <button id="restart">Start New Game</button>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameOverEl = document.getElementById('gameOver');
+    const restartBtn = document.getElementById('restart');
+
+    const GRID = [
+      [1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,1,0,0,0,0,1],
+      [1,0,1,0,1,0,1,1,0,1],
+      [1,0,1,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,1,0,1,0,1],
+      [1,1,1,1,0,1,0,1,0,1],
+      [1,0,0,1,0,0,0,1,0,1],
+      [1,0,0,0,0,1,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1]
+    ];
+    const TILE = canvas.width / GRID.length;
+    const INITIAL_SPEED = 2;
+    let baby, food, timerId, timeStart, score, gameOver;
+
+    function init() {
+      baby = { x: TILE + TILE/2, y: TILE + TILE/2, r: 15, vx:0, vy:0, speed: INITIAL_SPEED };
+      spawnFood();
+      timeStart = Date.now();
+      score = 0;
+      gameOver = false;
+      gameOverEl.style.display = 'none';
+      restartBtn.style.display = 'none';
+      clearTimeout(timerId);
+      timerId = setTimeout(endGame, 15000);
+      requestAnimationFrame(loop);
+    }
+
+    function spawnFood() {
+      let gx, gy;
+      do {
+        gx = Math.floor(Math.random() * GRID.length);
+        gy = Math.floor(Math.random() * GRID.length);
+      } while (GRID[gy][gx] !== 0);
+      food = { x: gx * TILE + TILE/2, y: gy * TILE + TILE/2, r: 12 };
+      timeStart = Date.now();
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameOver) return;
+      const rect = canvas.getBoundingClientRect();
+      const tx = e.clientX - rect.left;
+      const ty = e.clientY - rect.top;
+      const dx = tx - baby.x;
+      const dy = ty - baby.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0) {
+        baby.vx = (dx / dist) * baby.speed;
+        baby.vy = (dy / dist) * baby.speed;
+      }
+    });
+
+    restartBtn.addEventListener('click', init);
+
+    function isWall(x, y) {
+      const gx = Math.floor(x / TILE);
+      const gy = Math.floor(y / TILE);
+      return GRID[gy] && GRID[gy][gx] === 1;
+    }
+
+    function update() {
+      if (!gameOver) {
+        const nextX = baby.x + baby.vx;
+        const nextY = baby.y + baby.vy;
+        if (!isWall(nextX, baby.y)) baby.x = nextX;
+        else baby.vx = 0;
+        if (!isWall(baby.x, nextY)) baby.y = nextY;
+        else baby.vy = 0;
+        baby.vx *= 0.9;
+        baby.vy *= 0.9;
+        const d = Math.hypot(baby.x - food.x, baby.y - food.y);
+        if (d < baby.r + food.r) {
+          baby.r += 2;
+          baby.speed += 0.5;
+          score += 1;
+          clearTimeout(timerId);
+          spawnFood();
+          timerId = setTimeout(endGame, 15000);
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // draw cells
+      for (let y = 0; y < GRID.length; y++) {
+        for (let x = 0; x < GRID[y].length; x++) {
+          ctx.fillStyle = GRID[y][x] === 1 ? '#444' : '#ddd';
+          ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+        }
+      }
+      // grid lines
+      ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1;
+      for (let i = 0; i <= GRID.length; i++) {
+        ctx.beginPath(); ctx.moveTo(i * TILE, 0); ctx.lineTo(i * TILE, canvas.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * TILE); ctx.lineTo(canvas.width, i * TILE); ctx.stroke();
+      }
+      // draw food as emoji
+      if (!gameOver) {
+        ctx.font = `${food.r * 2}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🍎', food.x, food.y);
+      }
+      // draw baby as emoji
+      ctx.font = `${baby.r * 2}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('👶', baby.x, baby.y);
+      // HUD
+      const timeLeft = Math.max(0, 15 - Math.floor((Date.now() - timeStart) / 1000));
+      ctx.fillStyle = '#000'; ctx.font = '16px Arial';
+      ctx.fillText(`Time: ${timeLeft}s`, 10, 20);
+      ctx.fillText(`Score: ${score}`, 10, 40);
+    }
+
+    function loop() {
+      update(); draw();
+      if (!gameOver) requestAnimationFrame(loop);
+    }
+
+    function endGame() {
+      gameOver = true;
+      gameOverEl.style.display = 'block';
+      restartBtn.style.display = 'block';
+    }
+
+    init();
+  </script>
+</body>
+</html>
