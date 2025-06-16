@@ -49,6 +49,7 @@
 </head>
 <body>
   <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <div id="instructions" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;padding:0.5rem 1rem;border-radius:4px;">Click or use arrow keys to move the baby and eat food!</div>
   <div id="gameOver">😭 Baby is crying! Game Over!</div>
   <div id="success" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.7); color:#fff; padding:2rem; font-size:2rem;">You Succeeded!</div>
   <button id="restart">Start Game</button>
@@ -61,7 +62,7 @@
     const successEl = document.getElementById('success');
     const nextStageBtn = document.getElementById('nextStage');
 
-    const GRID = [
+    const STAGE1_GRID = [
       [1,1,1,1,1,1,1,1,1,1],
       [1,0,0,0,1,0,0,0,0,1],
       [1,0,1,0,1,0,1,1,0,1],
@@ -73,6 +74,19 @@
       [1,0,0,0,0,1,0,0,0,1],
       [1,1,1,1,1,1,1,1,1,1]
     ];
+    const STAGE2_GRID = [
+      [1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,1,0,0,0,1,0,1],
+      [1,0,1,1,0,1,0,1,0,1],
+      [1,0,1,0,0,0,0,0,0,1],
+      [1,0,1,0,1,1,1,1,0,1],
+      [1,0,0,0,0,1,0,1,0,1],
+      [1,1,1,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1]
+    ];
+    let GRID = STAGE1_GRID;
     let TILE;
     const INITIAL_SPEED = 3;
     const FOOD_EMOJIS = ['🍎','🍌','🥕','🍇','🍉','🍞','🍪','🍔','🍕','🍗','🍚','🍩','🍿','🍼','🥛','🥤'];
@@ -139,13 +153,33 @@
       }
     });
 
+    document.addEventListener('keydown', e => {
+      if (gameOver) return;
+      switch(e.key) {
+        case 'ArrowLeft':
+        case 'a':
+          baby.vx = -baby.speed; baby.vy = 0; break;
+        case 'ArrowRight':
+        case 'd':
+          baby.vx = baby.speed; baby.vy = 0; break;
+        case 'ArrowUp':
+        case 'w':
+          baby.vy = -baby.speed; baby.vx = 0; break;
+        case 'ArrowDown':
+        case 's':
+          baby.vy = baby.speed; baby.vx = 0; break;
+      }
+    });
+
     function startGame() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
       currentStage = 1;
+      GRID = STAGE1_GRID;
       successEl.style.display = 'none';
       nextStageBtn.style.display = 'none';
+      document.getElementById('instructions').style.display = 'none';
       init();
     }
 
@@ -154,8 +188,10 @@
 
     function startStage2() {
       currentStage = 2;
+      GRID = STAGE2_GRID;
       successEl.style.display = 'none';
       nextStageBtn.style.display = 'none';
+      document.getElementById('instructions').style.display = 'none';
       init();
     }
 
@@ -245,7 +281,9 @@
       restartBtn.style.display = 'block';
     }
 
-    // show start button on load
+    document.addEventListener('DOMContentLoaded', () => {
+      restartBtn.style.display = 'block';
+    });
   </script>
 </body>
 </html>
