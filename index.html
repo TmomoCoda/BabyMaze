@@ -122,11 +122,11 @@
       return { x: sx, y: sy };
     }
 
-    canvas.addEventListener('click', e => {
-      if (gameOver) return;
-      const rect = canvas.getBoundingClientRect();
-      const tx = e.clientX - rect.left;
-      const ty = e.clientY - rect.top;
+      canvas.addEventListener('click', e => {
+        if (gameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const tx = e.clientX - rect.left;
+        const ty = e.clientY - rect.top;
       const boardPos = screenToBoard(tx, ty);
       const dx = boardPos.x - baby.x;
       const dy = boardPos.y - baby.y;
@@ -136,8 +136,36 @@
       } else {
         baby.vx = 0;
         baby.vy = dy > 0 ? baby.speed : -baby.speed;
-      }
-    });
+        }
+      });
+
+      // allow arrow keys to control the baby
+      document.addEventListener('keydown', e => {
+        if (gameOver) return;
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+        switch (e.key) {
+          case 'ArrowUp':
+            baby.vx = 0;
+            baby.vy = -baby.speed;
+            baby.x = Math.floor(baby.x / TILE) * TILE + TILE/2;
+            break;
+          case 'ArrowDown':
+            baby.vx = 0;
+            baby.vy = baby.speed;
+            baby.x = Math.floor(baby.x / TILE) * TILE + TILE/2;
+            break;
+          case 'ArrowLeft':
+            baby.vx = -baby.speed;
+            baby.vy = 0;
+            baby.y = Math.floor(baby.y / TILE) * TILE + TILE/2;
+            break;
+          case 'ArrowRight':
+            baby.vx = baby.speed;
+            baby.vy = 0;
+            baby.y = Math.floor(baby.y / TILE) * TILE + TILE/2;
+            break;
+        }
+      });
 
     function startGame() {
       if (!document.fullscreenElement) {
@@ -173,6 +201,12 @@
         else baby.vx = 0;
         if (!isWall(baby.x, nextY)) baby.y = nextY;
         else baby.vy = 0;
+        // keep the baby aligned with the center of the row/column
+        if (baby.vx !== 0) {
+          baby.y = Math.floor(baby.y / TILE) * TILE + TILE / 2;
+        } else if (baby.vy !== 0) {
+          baby.x = Math.floor(baby.x / TILE) * TILE + TILE / 2;
+        }
         const d = Math.hypot(baby.x - food.x, baby.y - food.y);
         if (d < baby.r + food.r) {
           baby.r += 2;
