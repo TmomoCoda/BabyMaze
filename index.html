@@ -14,9 +14,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
     }
     canvas {
-      background: #ffffff;
+      background: linear-gradient(#fff, #f0f0f0);
       border: 2px solid #333;
       box-shadow: 0 20px 30px rgba(0,0,0,0.3);
     }
@@ -37,8 +38,12 @@
       left: 50%;
       transform: translate(-50%, -50%);
       padding: 0.5rem 1rem;
-      font-size: 1rem;
+      font-size: 1.2rem;
       cursor: pointer;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -66,7 +71,6 @@
     ];
     let TILE;
     const INITIAL_SPEED = 2;
-    let ISO_OFFSET_Y = 120;
     const FOOD_EMOJIS = ['🍎','🍌','🥕','🍇','🍉','🍞','🍪','🍔','🍕','🍗','🍚','🍩','🍿','🍼','🥛','🥤'];
     let baby, food, timerId, timeStart, score, gameOver;
     let currentFoodEmoji = '🍎';
@@ -77,7 +81,6 @@
       canvas.width = size;
       canvas.height = size;
       TILE = canvas.width / GRID.length;
-      ISO_OFFSET_Y = canvas.height / 2;
     }
 
     window.addEventListener('resize', resizeCanvas);
@@ -92,7 +95,7 @@
       gameOverEl.style.display = 'none';
       restartBtn.style.display = 'none';
       clearTimeout(timerId);
-      timerId = setTimeout(endGame, 15000);
+      timerId = setTimeout(endGame, 13000);
       requestAnimationFrame(loop);
     }
 
@@ -102,23 +105,14 @@
         gx = Math.floor(Math.random() * GRID.length);
         gy = Math.floor(Math.random() * GRID.length);
       } while (GRID[gy][gx] !== 0);
-      food = { x: gx * TILE + TILE/2, y: gy * TILE + TILE/2, r: 12 };
+      const size = Math.max(12, Math.round(baby.r * 0.8));
+      food = { x: gx * TILE + TILE/2, y: gy * TILE + TILE/2, r: size };
       currentFoodEmoji = FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
       timeStart = Date.now();
     }
 
     function screenToBoard(sx, sy) {
-      let x = sx - canvas.width / 2;
-      let y = sy - ISO_OFFSET_Y;
-      y /= 0.5;
-      const cos = Math.cos(Math.PI / 4);
-      const sin = Math.sin(Math.PI / 4);
-      const rx = x * cos - y * sin;
-      const ry = x * sin + y * cos;
-      return {
-        x: rx + GRID.length * TILE / 2,
-        y: ry + GRID.length * TILE / 2
-      };
+      return { x: sx, y: sy };
     }
 
     canvas.addEventListener('click', e => {
@@ -129,10 +123,12 @@
       const boardPos = screenToBoard(tx, ty);
       const dx = boardPos.x - baby.x;
       const dy = boardPos.y - baby.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 0) {
-        baby.vx = (dx / dist) * baby.speed;
-        baby.vy = (dy / dist) * baby.speed;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        baby.vx = dx > 0 ? baby.speed : -baby.speed;
+        baby.vy = 0;
+      } else {
+        baby.vx = 0;
+        baby.vy = dy > 0 ? baby.speed : -baby.speed;
       }
     });
 
@@ -159,8 +155,6 @@
         else baby.vx = 0;
         if (!isWall(baby.x, nextY)) baby.y = nextY;
         else baby.vy = 0;
-        baby.vx *= 0.9;
-        baby.vy *= 0.9;
         const d = Math.hypot(baby.x - food.x, baby.y - food.y);
         if (d < baby.r + food.r) {
           baby.r += 2;
@@ -170,7 +164,7 @@
           setTimeout(() => { babyEmoji = '👶'; }, 800);
           clearTimeout(timerId);
           spawnFood();
-          timerId = setTimeout(endGame, 15000);
+          timerId = setTimeout(endGame, 13000);
         }
       }
     }
@@ -178,10 +172,6 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
-      ctx.translate(canvas.width / 2, ISO_OFFSET_Y);
-      ctx.scale(1, 0.5);
-      ctx.rotate(-Math.PI / 4);
-      ctx.translate(-GRID.length * TILE / 2, -GRID.length * TILE / 2);
 
       // draw cells
       for (let y = 0; y < GRID.length; y++) {
@@ -212,7 +202,7 @@
       ctx.restore();
 
       // HUD
-      const timeLeft = Math.max(0, 15 - Math.floor((Date.now() - timeStart) / 1000));
+      const timeLeft = Math.max(0, 13 - Math.floor((Date.now() - timeStart) / 1000));
       ctx.fillStyle = '#000'; ctx.font = '16px Arial';
       ctx.fillText(`Time: ${timeLeft}s`, 10, 20);
       ctx.fillText(`Score: ${score}`, 10, 40);
