@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://freegames4eva.com/sitemap.xml
