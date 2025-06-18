@@ -5,90 +5,318 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TorchTD</title>
   <style>
-    body,html{margin:0;padding:0;height:100%;background:#000;color:#fff;touch-action:none;font-family:sans-serif;}
-    canvas{display:block;margin:auto;background:#111;}
-    #ui{position:absolute;top:10px;left:10px;}
-    #battery{margin-left:10px;}
-    button{font-size:16px;margin:0 5px;}
-    .mobile-btn{position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;}
-    #up{bottom:120px;left:70px;}#down{bottom:40px;left:70px;}#left{bottom:80px;left:10px;}#right{bottom:80px;left:130px;}#flash{bottom:40px;right:40px;width:70px;height:70px;border-radius:10px;}
-    @media(min-width:700px){.mobile-btn{display:none;}}
+    html,body{
+      margin:0;
+      padding:0;
+      overflow:hidden;
+      background:#232323;
+      height:100%;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-family:'Segoe UI', Arial, sans-serif;
+    }
+    canvas{
+      background:linear-gradient(#333,#111);
+      border:2px solid #444;
+      box-shadow:0 20px 30px rgba(0,0,0,0.4);
+    }
+    #gameOver{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      background:rgba(0,0,0,0.7);
+      color:white;
+      padding:2rem;
+      font-size:2rem;
+      display:none;
+    }
+    #restart{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      padding:0.5rem 1rem;
+      font-size:1.2rem;
+      cursor:pointer;
+      background:#4caf50;
+      color:white;
+      border:none;
+      border-radius:4px;
+    }
   </style>
 </head>
 <body>
-  <canvas id="c" width="480" height="480"></canvas>
-  <div id="ui">Night <span id="night">1</span> Battery <span id="battery">100</span>%</div>
-  <button id="up" class="mobile-btn">&#9650;</button>
-  <button id="down" class="mobile-btn">&#9660;</button>
-  <button id="left" class="mobile-btn">&#9664;</button>
-  <button id="right" class="mobile-btn">&#9654;</button>
-  <button id="flash" class="mobile-btn">Light</button>
-<script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const batteryEl = document.getElementById('battery');
-const nightEl = document.getElementById('night');
-let width = canvas.width, height = canvas.height;
-let player = {x:width/2,y:height/2,r:10,speed:3};
-let monster = {x:40,y:40,r:12,active:true};
-let battery=100, flashlight=false, night=1, start=Date.now();
-function draw(){
-  ctx.clearRect(0,0,width,height);
-  ctx.fillStyle='#222';ctx.fillRect(0,0,width,height);
-  // flashlight effect
-  // draw flashlight mask
-  ctx.save();
-  ctx.fillStyle='rgba(0,0,0,0.9)';
-  ctx.fillRect(0,0,width,height);
-  const radius=flashlight && battery>0?120:40;
-  const mask=ctx.createRadialGradient(player.x,player.y,0,player.x,player.y,radius);
-  mask.addColorStop(0,'rgba(0,0,0,0)');
-  mask.addColorStop(1,'rgba(0,0,0,1)');
-  ctx.globalCompositeOperation='destination-out';
-  ctx.fillStyle=mask;
-  ctx.fillRect(0,0,width,height);
-  ctx.restore();
-  if(flashlight && battery>0){
-    battery=Math.max(0,battery-0.1);
-  }
-  // draw player
-  ctx.fillStyle='cyan';
-  ctx.beginPath();ctx.arc(player.x,player.y,player.r,0,Math.PI*2);ctx.fill();
-  // draw monster
-  if(monster.active){
-    ctx.fillStyle='red';
-    ctx.beginPath();ctx.arc(monster.x,monster.y,monster.r,0,Math.PI*2);ctx.fill();
-  }
-  batteryEl.textContent=Math.round(battery);
-}
-function update(){
-  // monster chase
-  if(monster.active){
-    const dx=player.x-monster.x, dy=player.y-monster.y;
-    const dist=Math.hypot(dx,dy);
-    if(dist<player.r+monster.r){
-      alert('Game Over'); location.reload();
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <div id="gameOver">😱 The monsters got you! Game Over!</div>
+  <div id="success" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.7); color:#fff; padding:2rem; font-size:2rem;">Stage Clear!</div>
+  <button id="restart">Start Game</button>
+  <button id="nextStage" style="display:none; position:absolute; top:60%; left:50%; transform:translate(-50%,-50%); padding:0.5rem 1rem; font-size:1.2rem; cursor:pointer; background:#2196f3; color:white; border:none; border-radius:4px;">Start Stage 2</button>
+  <button id="nextStage3" style="display:none; position:absolute; top:65%; left:50%; transform:translate(-50%,-50%); padding:0.5rem 1rem; font-size:1.2rem; cursor:pointer; background:#ff5722; color:white; border:none; border-radius:4px;">Start Stage 3</button>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameOverEl = document.getElementById('gameOver');
+    const restartBtn = document.getElementById('restart');
+    const successEl = document.getElementById('success');
+    const nextStageBtn = document.getElementById('nextStage');
+    const nextStage3Btn = document.getElementById('nextStage3');
+
+    const GRID = [
+      [1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,1,0,0,0,0,1],
+      [1,0,1,0,1,0,1,1,0,1],
+      [1,0,1,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,1,0,1,0,1],
+      [1,1,1,1,0,1,0,1,0,1],
+      [1,0,0,1,0,0,0,1,0,1],
+      [1,0,0,0,0,1,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1]
+    ];
+    const CABIN_POS = {x:1,y:1};
+    let TILE;
+    const INITIAL_SPEED = 3;
+    const WOOD_EMOJIS = ['🪵','🕯️','🔥','🪔','✨'];
+    const MONSTER_EMOJIS = ['👹','👻','🧟','🐺','🕷️','👾','🦇','🧌'];
+
+    let girl, wood, monsters, timerId, timeStart, score, ammo, gameOver, torchActive;
+    let currentWoodEmoji = '🪵';
+    let girlEmoji = '👧';
+    let currentStage = 1;
+
+    function resizeCanvas(){
+      const size = Math.min(window.innerWidth, window.innerHeight);
+      canvas.width = size;
+      canvas.height = size;
+      TILE = canvas.width / GRID.length;
     }
-    if(dist<120 && flashlight && battery>0){
-      monster.active=false; // repelled
-    }else{
-      monster.x += dx/dist*1.2;
-      monster.y += dy/dist*1.2;
+    window.addEventListener('resize', resizeCanvas);
+
+    function init(){
+      resizeCanvas();
+      girl = {x: TILE * CABIN_POS.x + TILE/2, y: TILE * CABIN_POS.y + TILE/2, r:15, vx:0, vy:0, speed:INITIAL_SPEED};
+      spawnWood();
+      monsters = [];
+      let count = 0;
+      if(currentStage===1) count=1; else if(currentStage===2) count=2; else if(currentStage===3) count=2;
+      if(count>0) spawnMonsters(count);
+      timeStart = Date.now();
+      score = 0;
+      ammo = 0;
+      gameOver = false;
+      torchActive = false;
+      gameOverEl.style.display='none';
+      restartBtn.style.display='none';
+      successEl.style.display='none';
+      nextStageBtn.style.display='none';
+      nextStage3Btn.style.display='none';
+      clearTimeout(timerId);
+      timerId = setTimeout(endGame,13000);
+      requestAnimationFrame(loop);
     }
-  }
-  // night cycle
-  if(Date.now()-start>30000){
-    night++; if(night>5){alert('You survived!'); location.reload();}
-    start=Date.now(); monster.active=true; monster.x=Math.random()*width; monster.y=Math.random()*height; battery=100; nightEl.textContent=night;
-  }
-}
-function loop(){update();draw();requestAnimationFrame(loop);}loop();
-// controls
-function move(dx,dy){player.x=Math.max(0,Math.min(width,player.x+dx));player.y=Math.max(0,Math.min(height,player.y+dy));}
-window.addEventListener('keydown',e=>{if(e.key==='ArrowUp')move(0,-player.speed);if(e.key==='ArrowDown')move(0,player.speed);if(e.key==='ArrowLeft')move(-player.speed,0);if(e.key==='ArrowRight')move(player.speed,0);if(e.key===' '){flashlight=!flashlight;}});
-// mobile
-const up=document.getElementById('up'),down=document.getElementById('down'),left=document.getElementById('left'),right=document.getElementById('right'),flash=document.getElementById('flash');
-up.addEventListener('touchstart',()=>move(0,-player.speed));down.addEventListener('touchstart',()=>move(0,player.speed));left.addEventListener('touchstart',()=>move(-player.speed,0));right.addEventListener('touchstart',()=>move(player.speed,0));flash.addEventListener('touchstart',()=>{flashlight=!flashlight;});
-</script>
+
+    function spawnWood(){
+      let gx, gy;
+      do{
+        gx = Math.floor(Math.random()*GRID.length);
+        gy = Math.floor(Math.random()*GRID.length);
+      }while(GRID[gy][gx]!==0 || (gx===CABIN_POS.x && gy===CABIN_POS.y));
+      const size = Math.max(12, Math.round(girl.r*0.8));
+      wood = {x: gx*TILE+TILE/2, y: gy*TILE+TILE/2, r:size};
+      currentWoodEmoji = WOOD_EMOJIS[Math.floor(Math.random()*WOOD_EMOJIS.length)];
+      timeStart = Date.now();
+    }
+
+    function spawnMonsters(count=1){
+      monsters = [];
+      for(let i=0;i<count;i++){
+        let gx, gy;
+        do{
+          gx=Math.floor(Math.random()*GRID.length);
+          gy=Math.floor(Math.random()*GRID.length);
+        }while(GRID[gy][gx]!==0 || (gx===CABIN_POS.x && gy===CABIN_POS.y));
+        const emoji = MONSTER_EMOJIS[Math.floor(Math.random()*MONSTER_EMOJIS.length)];
+        const m = {x: gx*TILE+TILE/2, y: gy*TILE+TILE/2, r:TILE*0.4, vx:0, vy:0, speed: currentStage===3?0.5:0, emoji};
+        monsters.push(m);
+      }
+    }
+
+    function screenToBoard(sx,sy){return {x:sx,y:sy};}
+
+    canvas.addEventListener('click',e=>{
+      if(gameOver) return;
+      const rect = canvas.getBoundingClientRect();
+      const tx = e.clientX - rect.left;
+      const ty = e.clientY - rect.top;
+      const boardPos = screenToBoard(tx,ty);
+      const dx = boardPos.x - girl.x;
+      const dy = boardPos.y - girl.y;
+      if(Math.abs(dx)>Math.abs(dy)){
+        girl.vx = dx>0?girl.speed:-girl.speed;
+        girl.vy = 0;
+      }else{
+        girl.vx = 0;
+        girl.vy = dy>0?girl.speed:-girl.speed;
+      }
+    });
+
+    document.addEventListener('keydown',e=>{
+      if(gameOver) return;
+      if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+      switch(e.key){
+        case 'ArrowUp':
+          girl.vx=0;girl.vy=-girl.speed;
+          girl.x = Math.floor(girl.x/TILE)*TILE + TILE/2;
+          break;
+        case 'ArrowDown':
+          girl.vx=0;girl.vy=girl.speed;
+          girl.x = Math.floor(girl.x/TILE)*TILE + TILE/2;
+          break;
+        case 'ArrowLeft':
+          girl.vx=-girl.speed;girl.vy=0;
+          girl.y = Math.floor(girl.y/TILE)*TILE + TILE/2;
+          break;
+        case 'ArrowRight':
+          girl.vx=girl.speed;girl.vy=0;
+          girl.y = Math.floor(girl.y/TILE)*TILE + TILE/2;
+          break;
+        case 'a':
+        case 'A':
+          useTorch();
+          break;
+      }
+    });
+
+    function startGame(){
+      if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(()=>{});}
+      currentStage=1;
+      successEl.style.display='none';
+      nextStageBtn.style.display='none';
+      init();
+    }
+    restartBtn.addEventListener('click',startGame);
+    nextStageBtn.addEventListener('click',startStage2);
+    nextStage3Btn.addEventListener('click',startStage3);
+
+    function startStage2(){
+      currentStage=2;
+      successEl.style.display='none';
+      nextStageBtn.style.display='none';
+      init();
+    }
+
+    function startStage3(){
+      currentStage=3;
+      successEl.style.display='none';
+      nextStageBtn.style.display='none';
+      nextStage3Btn.style.display='none';
+      init();
+    }
+
+    function useTorch(){
+      if(ammo<=0) return;
+      torchActive=true;
+      girlEmoji='🔥';
+      for(let i=monsters.length-1;i>=0;i--){
+        const md=Math.hypot(girl.x-monsters[i].x,girl.y-monsters[i].y);
+        if(md<=TILE*2) monsters.splice(i,1);
+      }
+      ammo-=1;
+      setTimeout(()=>{torchActive=false;girlEmoji='👧';},500);
+    }
+
+    function isWall(x,y){
+      const gx=Math.floor(x/TILE);
+      const gy=Math.floor(y/TILE);
+      return GRID[gy] && GRID[gy][gx]===1;
+    }
+
+    function update(){
+      if(!gameOver){
+        const nextX=girl.x+girl.vx;
+        const nextY=girl.y+girl.vy;
+        if(!isWall(nextX,girl.y)) girl.x=nextX; else girl.vx=0;
+        if(!isWall(girl.x,nextY)) girl.y=nextY; else girl.vy=0;
+        if(girl.vx!==0){girl.y=Math.floor(girl.y/TILE)*TILE+TILE/2;}else if(girl.vy!==0){girl.x=Math.floor(girl.x/TILE)*TILE+TILE/2;}
+        const d=Math.hypot(girl.x-wood.x,girl.y-wood.y);
+        if(d<girl.r+wood.r){
+          girl.r+=2; girl.speed+=0.5; score+=1; ammo+=1;
+          if(score>=10 && currentStage===1){gameOver=true;successEl.style.display='block';nextStageBtn.style.display='block';girlEmoji='👧';clearTimeout(timerId);return;}
+          if(score>=20 && currentStage===2){gameOver=true;successEl.style.display='block';nextStage3Btn.style.display='block';girlEmoji='👧';clearTimeout(timerId);return;}
+          if(score>=30 && currentStage===3){gameOver=true;successEl.style.display='block';girlEmoji='👧';restartBtn.style.display='block';clearTimeout(timerId);return;}
+          girlEmoji='😀'; setTimeout(()=>{girlEmoji='👧';},800);
+          clearTimeout(timerId); spawnWood(); timerId=setTimeout(endGame,13000);
+        }
+        if(monsters.length>0){
+          for(const m of monsters){
+            if(currentStage===3 && m.speed){
+              const dx=girl.x-m.x, dy=girl.y-m.y; const dist=Math.hypot(dx,dy);
+              if(dist>0){
+                const stepX=(dx/dist)*m.speed; const stepY=(dy/dist)*m.speed;
+                const nx=m.x+stepX; const ny=m.y+stepY;
+                if(!isWall(nx,m.y)) m.x=nx; if(!isWall(m.x,ny)) m.y=ny;
+              }
+            }
+            const md=Math.hypot(girl.x-m.x,girl.y-m.y);
+            if(md<girl.r+m.r){endGame();return;}
+          }
+        }
+      }
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.save();
+      for(let y=0;y<GRID.length;y++){
+        for(let x=0;x<GRID[y].length;x++){
+          if(x===CABIN_POS.x && y===CABIN_POS.y){
+            ctx.font=`${TILE*0.8}px sans-serif`;
+            ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.fillText('🏠',x*TILE+TILE/2,y*TILE+TILE/2);
+          }else if(GRID[y][x]===1){
+            ctx.font=`${TILE*0.8}px sans-serif`;
+            ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.fillText('🌲',x*TILE+TILE/2,y*TILE+TILE/2);
+          }else{
+            ctx.fillStyle='#456';
+            ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+          }
+        }
+      }
+      ctx.strokeStyle='#555';ctx.lineWidth=1;
+      for(let i=0;i<=GRID.length;i++){
+        ctx.beginPath();ctx.moveTo(i*TILE,0);ctx.lineTo(i*TILE,GRID.length*TILE);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,i*TILE);ctx.lineTo(GRID.length*TILE,i*TILE);ctx.stroke();
+      }
+      if(!gameOver){
+        ctx.font=`${wood.r*2}px sans-serif`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(currentWoodEmoji,wood.x,wood.y);
+      }
+      ctx.font=`${girl.r*2}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(girlEmoji,girl.x,girl.y);
+      if(monsters.length>0){
+        for(const m of monsters){
+          ctx.font=`${m.r*2}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(m.emoji,m.x,m.y);
+        }
+      }
+      ctx.restore();
+      const timeLeft=Math.max(0,13-Math.floor((Date.now()-timeStart)/1000));
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.fillRect(5,5,160,70);
+      ctx.fillStyle='#000';
+      ctx.font='bold 20px Arial';
+      ctx.fillText(`Time: ${timeLeft}s`,10,30);
+      ctx.fillText(`Score: ${score}`,10,50);
+      ctx.fillText(`Ammo: ${ammo}`,90,50);
+    }
+
+    function loop(){update();draw(); if(!gameOver) requestAnimationFrame(loop);}
+
+    function endGame(){ gameOver=true; gameOverEl.style.display='block'; restartBtn.style.display='block'; }
+  </script>
 </body>
 </html>
