@@ -36,14 +36,19 @@ function draw(){
   ctx.clearRect(0,0,width,height);
   ctx.fillStyle='#222';ctx.fillRect(0,0,width,height);
   // flashlight effect
+  // draw flashlight mask
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.9)';
+  ctx.fillRect(0,0,width,height);
+  const radius=flashlight && battery>0?120:40;
+  const mask=ctx.createRadialGradient(player.x,player.y,0,player.x,player.y,radius);
+  mask.addColorStop(0,'rgba(0,0,0,0)');
+  mask.addColorStop(1,'rgba(0,0,0,1)');
+  ctx.globalCompositeOperation='destination-out';
+  ctx.fillStyle=mask;
+  ctx.fillRect(0,0,width,height);
+  ctx.restore();
   if(flashlight && battery>0){
-    ctx.save();
-    const grad=ctx.createRadialGradient(player.x,player.y,10,player.x,player.y,120);
-    grad.addColorStop(0,'rgba(255,255,200,1)');
-    grad.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=grad;
-    ctx.fillRect(0,0,width,height);
-    ctx.restore();
     battery=Math.max(0,battery-0.1);
   }
   // draw player
