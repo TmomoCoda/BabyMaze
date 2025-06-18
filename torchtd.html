@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TorchTD</title>
+  <style>
+    body,html{margin:0;padding:0;height:100%;background:#000;color:#fff;touch-action:none;font-family:sans-serif;}
+    canvas{display:block;margin:auto;background:#111;}
+    #ui{position:absolute;top:10px;left:10px;}
+    #battery{margin-left:10px;}
+    button{font-size:16px;margin:0 5px;}
+    .mobile-btn{position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;}
+    #up{bottom:120px;left:70px;}#down{bottom:40px;left:70px;}#left{bottom:80px;left:10px;}#right{bottom:80px;left:130px;}#flash{bottom:40px;right:40px;width:70px;height:70px;border-radius:10px;}
+    @media(min-width:700px){.mobile-btn{display:none;}}
+  </style>
+</head>
+<body>
+  <canvas id="c" width="480" height="480"></canvas>
+  <div id="ui">Night <span id="night">1</span> Battery <span id="battery">100</span>%</div>
+  <button id="up" class="mobile-btn">&#9650;</button>
+  <button id="down" class="mobile-btn">&#9660;</button>
+  <button id="left" class="mobile-btn">&#9664;</button>
+  <button id="right" class="mobile-btn">&#9654;</button>
+  <button id="flash" class="mobile-btn">Light</button>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const batteryEl = document.getElementById('battery');
+const nightEl = document.getElementById('night');
+let width = canvas.width, height = canvas.height;
+let player = {x:width/2,y:height/2,r:10,speed:3};
+let monster = {x:40,y:40,r:12,active:true};
+let battery=100, flashlight=false, night=1, start=Date.now();
+function draw(){
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle='#222';ctx.fillRect(0,0,width,height);
+  // flashlight effect
+  if(flashlight && battery>0){
+    ctx.save();
+    const grad=ctx.createRadialGradient(player.x,player.y,10,player.x,player.y,120);
+    grad.addColorStop(0,'rgba(255,255,200,1)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,width,height);
+    ctx.restore();
+    battery=Math.max(0,battery-0.1);
+  }
+  // draw player
+  ctx.fillStyle='cyan';
+  ctx.beginPath();ctx.arc(player.x,player.y,player.r,0,Math.PI*2);ctx.fill();
+  // draw monster
+  if(monster.active){
+    ctx.fillStyle='red';
+    ctx.beginPath();ctx.arc(monster.x,monster.y,monster.r,0,Math.PI*2);ctx.fill();
+  }
+  batteryEl.textContent=Math.round(battery);
+}
+function update(){
+  // monster chase
+  if(monster.active){
+    const dx=player.x-monster.x, dy=player.y-monster.y;
+    const dist=Math.hypot(dx,dy);
+    if(dist<player.r+monster.r){
+      alert('Game Over'); location.reload();
+    }
+    if(dist<120 && flashlight && battery>0){
+      monster.active=false; // repelled
+    }else{
+      monster.x += dx/dist*1.2;
+      monster.y += dy/dist*1.2;
+    }
+  }
+  // night cycle
+  if(Date.now()-start>30000){
+    night++; if(night>5){alert('You survived!'); location.reload();}
+    start=Date.now(); monster.active=true; monster.x=Math.random()*width; monster.y=Math.random()*height; battery=100; nightEl.textContent=night;
+  }
+}
+function loop(){update();draw();requestAnimationFrame(loop);}loop();
+// controls
+function move(dx,dy){player.x=Math.max(0,Math.min(width,player.x+dx));player.y=Math.max(0,Math.min(height,player.y+dy));}
+window.addEventListener('keydown',e=>{if(e.key==='ArrowUp')move(0,-player.speed);if(e.key==='ArrowDown')move(0,player.speed);if(e.key==='ArrowLeft')move(-player.speed,0);if(e.key==='ArrowRight')move(player.speed,0);if(e.key===' '){flashlight=!flashlight;}});
+// mobile
+const up=document.getElementById('up'),down=document.getElementById('down'),left=document.getElementById('left'),right=document.getElementById('right'),flash=document.getElementById('flash');
+up.addEventListener('touchstart',()=>move(0,-player.speed));down.addEventListener('touchstart',()=>move(0,player.speed));left.addEventListener('touchstart',()=>move(-player.speed,0));right.addEventListener('touchstart',()=>move(player.speed,0));flash.addEventListener('touchstart',()=>{flashlight=!flashlight;});
+</script>
+</body>
+</html>
