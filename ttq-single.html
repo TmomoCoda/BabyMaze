@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Times-Table Quest (Standalone)</title>
+  <style>
+:root {
+  --primary: #4e63ff;
+  --accent: #ffd166;
+  --bg: #ffffff;
+  --text: #333333;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --text: #f5f5f5;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.hero {
+  background: var(--primary);
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+.mode-select {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#trainer {
+  display: grid;
+  place-items: center;
+  margin-top: 1rem;
+}
+
+#card {
+  width: 200px;
+  height: 200px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+#card .front, #card .back {
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  background: var(--accent);
+  border-radius: 8px;
+  transition: transform 0.6s;
+}
+#card.flip .front {
+  transform: rotateY(180deg);
+}
+#card.flip .back {
+  transform: rotateY(0);
+}
+#card .back {
+  transform: rotateY(-180deg);
+}
+
+.hidden { display: none; }
+
+#hud {
+  margin-top: auto;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+#xpBar {
+  background: #ccc;
+  width: 50%;
+  height: 10px;
+  position: relative;
+  border-radius: 5px;
+}
+#xpFill {
+  background: var(--accent);
+  height: 100%;
+  width: 0;
+  display: block;
+  border-radius: 5px;
+  transition: width 0.3s;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: var(--bg);
+  color: var(--text);
+  padding: 1rem;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 300px;
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity:1; }
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+button:focus {
+  outline: 2px solid var(--primary);
+}
+
+#toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: none;
+  color: #fff;
+}
+
+.toast-success { background: #4caf50; }
+.toast-hint { background: #ff9800; }
+.toast-error { background: #f44336; }
+
+#confettiCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+body.high-contrast{background:#000;color:#fff;}
+body.high-contrast button{background:#fff;color:#000;}
+body.high-contrast .hero,
+body.high-contrast #hud{background:#000;color:#fff;}
+  </style>
+</head>
+<body>
+  <header class="hero" role="banner">
+    <h1>Times-Table Quest</h1>
+    <button id="contrastToggle" aria-label="Toggle high contrast" role="switch">HC</button>
+  </header>
+
+  <main id="app" role="main">
+    <section class="mode-select" aria-label="Select multiplication table">
+      <label for="tableSelect">Choose a table:</label>
+      <select id="tableSelect"></select>
+      <button id="startBtn" aria-label="Start trainer">Start</button>
+    </section>
+
+    <section id="trainer" class="hidden" aria-label="Training area">
+      <div id="card" tabindex="0" role="region" aria-label="flash card">
+        <div class="front"></div>
+        <div class="back"></div>
+      </div>
+      <form id="answerForm" class="hidden" aria-label="Answer form">
+        <input id="answerInput" type="number" aria-label="Your answer">
+        <button type="submit" aria-label="Submit answer">Go</button>
+      </form>
+      <div id="mcqs" class="hidden" aria-label="Multiple choice"></div>
+      <div id="timer" class="hidden" aria-label="Countdown timer"></div>
+    </section>
+
+    <aside id="hud" aria-label="Progress heads-up display">
+      <div id="xpBar"><span id="xpFill"></span></div>
+      <div id="level">Lvl 1</div>
+      <div id="streak">Streak: 0</div>
+    </aside>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="trophyModal" class="modal hidden" role="dialog" aria-label="Trophy cabinet">
+    <div class="modal-content">
+      <h2>Trophies</h2>
+      <ul id="trophyList"></ul>
+      <button id="closeModal" aria-label="Close">Close</button>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas" class="hidden" aria-hidden="true"></canvas>
+
+  <script type="module">
+// Times-Table Quest main script
+
+// ----- DataStore -----
+class DataStore {
+  constructor() {
+    this.stats = JSON.parse(localStorage.getItem('ttq-stats') || '{}');
+  }
+  save() {
+    localStorage.setItem('ttq-stats', JSON.stringify(this.stats));
+  }
+  record(table, correct, time) {
+    const rec = this.stats[table] || { tries: 0, correct: 0, bestTime: null };
+    rec.tries++;
+    if (correct) rec.correct++;
+    if (!rec.bestTime || time < rec.bestTime) rec.bestTime = time;
+    this.stats[table] = rec;
+    this.save();
+  }
+}
+
+// ----- QuizEngine -----
+class QuizEngine {
+  constructor() {
+    this.history = [];
+  }
+  nextQuestion(table) {
+    let factor;
+    do {
+      factor = Math.floor(Math.random()*12)+1;
+    } while (this.history.slice(-5).includes(factor));
+    this.history.push(factor);
+    return { a: table, b: factor, answer: table*factor };
+  }
+}
+
+// ----- UI Helpers -----
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.className = `toast-${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=> el.style.display='none', 1500);
+}
+
+function confetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.classList.remove('hidden');
+  const pieces = Array.from({length:100}, ()=>({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*6+4,
+    c: `hsl(${Math.random()*360},70%,60%)`
+  }));
+  let ticks = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+      p.y += 2;
+    });
+    if (ticks++ < 30) requestAnimationFrame(draw); else canvas.classList.add('hidden');
+  }
+  draw();
+}
+
+// ----- Gamification -----
+class Game {
+  constructor() {
+    this.xp = 0;
+    this.level = 1;
+    this.streak = 0;
+    this.engine = new QuizEngine();
+    this.store = new DataStore();
+    this.currentTable = 1;
+    this.question = null;
+    this.bindUI();
+  }
+
+  bindUI() {
+    const select = document.getElementById('tableSelect');
+    for(let i=1;i<=12;i++){
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = `x${i}`;
+      select.appendChild(opt);
+    }
+    document.getElementById('startBtn').addEventListener('click', ()=>this.start());
+    document.getElementById('answerForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      this.submitAnswer();
+    });
+    document.getElementById('closeModal').addEventListener('click', ()=>{
+      document.getElementById('trophyModal').classList.add('hidden');
+    });
+    document.getElementById('contrastToggle').addEventListener('click',()=>{
+      document.body.classList.toggle('high-contrast');
+    });
+    document.addEventListener('keydown', e=>{
+      if(e.key==='Enter') this.submitAnswer();
+    });
+  }
+
+  start() {
+    this.currentTable = parseInt(document.getElementById('tableSelect').value,10);
+    document.getElementById('trainer').classList.remove('hidden');
+    this.next();
+  }
+
+  next() {
+    this.question = this.engine.nextQuestion(this.currentTable);
+    const card = document.getElementById('card');
+    card.classList.remove('flip');
+    card.querySelector('.front').textContent = `${this.question.a} x ?`;
+    card.querySelector('.back').textContent = `${this.question.a} x ${this.question.b}`;
+    document.getElementById('answerForm').classList.remove('hidden');
+    document.getElementById('answerInput').value='';
+    document.getElementById('answerInput').focus();
+  }
+
+  submitAnswer() {
+    const val = parseInt(document.getElementById('answerInput').value,10);
+    if(isNaN(val)) return;
+    const correct = val === this.question.answer;
+    if(correct){
+      this.streak++;
+      this.xp += 10 + (this.streak%5===0?5:0);
+      toast('Great!', 'success');
+      if(this.streak%5===0) confetti();
+    } else {
+      this.streak=0;
+      toast('Try again', 'error');
+    }
+    if(this.xp>= this.level*120){
+      this.level++;
+      document.getElementById('level').textContent = `Lvl ${this.level}`;
+    }
+    document.getElementById('xpFill').style.width = `${(this.xp%120)/1.2}%`;
+    document.getElementById('streak').textContent = `Streak: ${this.streak}`;
+    this.next();
+  }
+}
+
+// start the game when DOM ready
+window.addEventListener('DOMContentLoaded',()=>{
+  new Game();
+});
+  </script>
+</body>
+</html>
