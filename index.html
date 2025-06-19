@@ -3,64 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Baby Maze Hunt</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #faf3e0;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'Segoe UI', Arial, sans-serif;
-    }
-    canvas {
-      background: linear-gradient(#fff, #f0f0f0);
-      border: 2px solid #333;
-      box-shadow: 0 20px 30px rgba(0,0,0,0.3);
-    }
-    #gameOver {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 2rem;
-      font-size: 2rem;
-      display: none;
-    }
-    #restart {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 0.5rem 1rem;
-      font-size: 1.2rem;
-      cursor: pointer;
-      background: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-  </style>
+  <title>Times-Table Quest</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="gameCanvas" width="600" height="600"></canvas>
-  <div id="gameOver">😭 Baby is crying! Game Over!</div>
-  <div id="success" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.7); color:#fff; padding:2rem; font-size:2rem;">You Succeeded!</div>
-  <button id="restart">Start Game</button>
-  <button id="nextStage" style="display:none; position:absolute; top:60%; left:50%; transform:translate(-50%,-50%); padding:0.5rem 1rem; font-size:1.2rem; cursor:pointer; background:#2196f3; color:white; border:none; border-radius:4px;">Start Stage 2</button>
-  <button id="nextStage3" style="display:none; position:absolute; top:65%; left:50%; transform:translate(-50%,-50%); padding:0.5rem 1rem; font-size:1.2rem; cursor:pointer; background:#ff5722; color:white; border:none; border-radius:4px;">Start Stage 3</button>
-  <script src="game.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js');
-      });
-    }
-  </script>
+  <header class="hero" role="banner">
+    <h1>Times-Table Quest</h1>
+    <button id="contrastToggle" aria-label="Toggle high contrast" role="switch">HC</button>
+  </header>
+
+  <main id="app" role="main">
+    <section class="mode-select" aria-label="Select multiplication table">
+      <label for="tableSelect">Choose a table:</label>
+      <select id="tableSelect"></select>
+      <button id="startBtn" aria-label="Start trainer">Start</button>
+    </section>
+
+    <section id="trainer" class="hidden" aria-label="Training area">
+      <div id="card" tabindex="0" role="region" aria-label="flash card">
+        <div class="front"></div>
+        <div class="back"></div>
+      </div>
+      <form id="answerForm" class="hidden" aria-label="Answer form">
+        <input id="answerInput" type="number" aria-label="Your answer">
+        <button type="submit" aria-label="Submit answer">Go</button>
+      </form>
+      <div id="mcqs" class="hidden" aria-label="Multiple choice"></div>
+      <div id="timer" class="hidden" aria-label="Countdown timer"></div>
+    </section>
+
+    <aside id="hud" aria-label="Progress heads-up display">
+      <div id="xpBar"><span id="xpFill"></span></div>
+      <div id="level">Lvl 1</div>
+      <div id="streak">Streak: 0</div>
+    </aside>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="trophyModal" class="modal hidden" role="dialog" aria-label="Trophy cabinet">
+    <div class="modal-content">
+      <h2>Trophies</h2>
+      <ul id="trophyList"></ul>
+      <button id="closeModal" aria-label="Close">Close</button>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas" class="hidden" aria-hidden="true"></canvas>
+
+  <script src="app.js" type="module"></script>
 </body>
 </html>

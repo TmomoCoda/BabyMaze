@@ -1,0 +1,160 @@
+:root {
+  --primary: #4e63ff;
+  --accent: #ffd166;
+  --bg: #ffffff;
+  --text: #333333;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --text: #f5f5f5;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.hero {
+  background: var(--primary);
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+.mode-select {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#trainer {
+  display: grid;
+  place-items: center;
+  margin-top: 1rem;
+}
+
+#card {
+  width: 200px;
+  height: 200px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+#card .front, #card .back {
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  background: var(--accent);
+  border-radius: 8px;
+  transition: transform 0.6s;
+}
+#card.flip .front {
+  transform: rotateY(180deg);
+}
+#card.flip .back {
+  transform: rotateY(0);
+}
+#card .back {
+  transform: rotateY(-180deg);
+}
+
+.hidden { display: none; }
+
+#hud {
+  margin-top: auto;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+#xpBar {
+  background: #ccc;
+  width: 50%;
+  height: 10px;
+  position: relative;
+  border-radius: 5px;
+}
+#xpFill {
+  background: var(--accent);
+  height: 100%;
+  width: 0;
+  display: block;
+  border-radius: 5px;
+  transition: width 0.3s;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: var(--bg);
+  color: var(--text);
+  padding: 1rem;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 300px;
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity:1; }
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+button:focus {
+  outline: 2px solid var(--primary);
+}
+
+#toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: none;
+  color: #fff;
+}
+
+.toast-success { background: #4caf50; }
+.toast-hint { background: #ff9800; }
+.toast-error { background: #f44336; }
+
+#confettiCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
