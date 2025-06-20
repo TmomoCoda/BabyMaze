@@ -3,22 +3,30 @@
   --accent: #ffd166;
   --bg: #ffffff;
   --text: #333333;
+  --grad1: #ffe29f;
+  --grad2: #ffa99f;
+  --grad3: #a7cdf0;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1a1a1a;
     --text: #f5f5f5;
+    --grad1: #27323a;
+    --grad2: #485461;
+    --grad3: #28313b;
   }
 }
 
 body {
   margin: 0;
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: var(--bg);
+  background: linear-gradient(-45deg, var(--grad1), var(--grad2), var(--grad3), var(--grad1));
+  background-size: 400% 400%;
   color: var(--text);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  animation: gradientShift 15s ease infinite;
 }
 
 .hero {
@@ -121,6 +129,12 @@ body {
 @keyframes pop {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity:1; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 button {
