@@ -5,12 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreeGames4Eva</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fafafa; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(-45deg, #ffe29f, #ffa99f, #a7cdf0, #ffe29f);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+    }
     header { background: #333; color: white; padding: 1rem; text-align: center; }
     .hero { padding: 2rem; text-align: center; background: #eee; }
     .categories { display: flex; flex-wrap: wrap; margin: 1rem; }
     .category { flex: 1 0 300px; background: white; margin: 0.5rem; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; }
     .category h3 { margin-top: 0; }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
   </style>
 </head>
 <body>
