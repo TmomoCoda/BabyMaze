@@ -4,125 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreeGames4Eva</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(-45deg, #ffe29f, #ffa99f, #a7cdf0, #ffe29f);
-      background-size: 400% 400%;
-      animation: gradientShift 15s ease infinite;
-    }
-    header { background: #333; color: white; padding: 1rem; text-align: center; }
-    .hero { padding: 2rem; text-align: center; background: #eee; }
-    .categories { display: flex; flex-wrap: wrap; margin: 1rem; }
-    .category { flex: 1 0 300px; background: white; margin: 0.5rem; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; }
-    .category h3 { margin-top: 0; }
-
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+    .categories{display:flex;flex-wrap:wrap;margin:1rem;}
+    .category{flex:1 0 250px;background:white;margin:0.5rem;padding:1rem;border:1px solid #ddd;border-radius:4px;}
+    .category h3{margin-top:0;}
   </style>
 </head>
 <body>
-  <header>
+  <header class="hero">
     <h1>FreeGames4Eva — play, rate, create.</h1>
   </header>
-  <div class="hero">
-    <p>Browse 20 000+ free HTML5 games. Every title is graded by the community on Look & Feel, Playability, Creativity and Overall.</p>
-    <p>Ready? Dive into today’s Hot 10 ↓</p>
-  </div>
+  <nav>
+    <ul class="game-links">
+      <li><a href="index.html">Times-Table Quest</a></li>
+      <li><a href="isometric.html">Baby Maze Hunt</a></li>
+      <li><a href="maze.html">Escape School Obby</a></li>
+      <li><a href="torchtd.html">Torch TD</a></li>
+    </ul>
+  </nav>
+  <section class="hero">
+    <p>Browse 20 000+ free HTML5 games. Every title is graded by the community on Look &amp; Feel, Playability, Creativity and Overall.</p>
+  </section>
   <section id="categories" class="categories">
     <div class="category">
       <h3>Maze</h3>
       <p>Time-boxed labyrinths; collect keys, beat the clock.</p>
-      <ul>
-        <li><a href="index.html">Baby Maze Hunt</a> – live</li>
-      </ul>
+      <ul><li><a href="isometric.html">Baby Maze Hunt</a></li></ul>
     </div>
     <div class="category">
       <h3>Obby / Obstacle</h3>
       <p>3-D parkour courses à la Roblox; precision jumps matter.</p>
-      <ul>
-        <li><a href="maze.html">Escape School Obby</a> – new</li>
-      </ul>
-    </div>
-    <div class="category">
-      <h3>Sports</h3>
-      <p>Football, hoops, cricket nets; physics-accurate mini-matches.</p>
-    </div>
-    <div class="category">
-      <h3>Racing</h3>
-      <p>Street, kart, drag & endless-runner variants.</p>
-    </div>
-    <div class="category">
-      <h3>Puzzle</h3>
-      <p>Match-3, sokoban, sliding tiles for the brainiacs.</p>
-    </div>
-    <div class="category">
-      <h3>Strategy</h3>
-      <p>Real-time or turn-based; build, conquer, repeat.</p>
-    </div>
-    <div class="category">
-      <h3>Simulation</h3>
-      <p>Farming, city-builder and life-sim sandboxes.</p>
-    </div>
-    <div class="category">
-      <h3>RPG</h3>
-      <p>Quest-driven stories, XP grind, loot drops.</p>
-    </div>
-    <div class="category">
-      <h3>Adventure</h3>
-      <p>Narrative exploration with light combat/puzzles.</p>
-    </div>
-    <div class="category">
-      <h3>Platformer</h3>
-      <p>Side-scroll classics; double-jump nirvana.</p>
-    </div>
-    <div class="category">
-      <h3>Shooter</h3>
-      <p>First/third-person blasters; aim-assist for mobile.</p>
-    </div>
-    <div class="category">
-      <h3>Tower Defense</h3>
-      <p>Wave after wave; upgrade paths galore.</p>
-    </div>
-    <div class="category">
-      <h3>Arcade / Casual</h3>
-      <p>One-tap mechanics; snack-size fun.</p>
-    </div>
-    <div class="category">
-      <h3>Multiplayer</h3>
-      <p>Real-time lobbies; battle-royale or co-op.</p>
-    </div>
-    <div class="category">
-      <h3>Rhythm / Music</h3>
-      <p>Beat-matching, reaction-time heaven.</p>
-    </div>
-    <div class="category">
-      <h3>Card & Board</h3>
-      <p>Solitaire, chess, deck-builders.</p>
+      <ul><li><a href="maze.html">Escape School Obby</a></li></ul>
     </div>
     <div class="category">
       <h3>Educational</h3>
       <p>Math, coding, geography quizzes.</p>
+      <ul><li><a href="index.html">Times-Table Quest</a></li></ul>
     </div>
     <div class="category">
       <h3>Horror</h3>
       <p>Jumpscares, survival, eerie ambience.</p>
-      <ul>
-        <li><a href="torchtd.html">TorchTD</a> – new</li>
-      </ul>
-    </div>
-    <div class="category">
-      <h3>Sandbox / Creative</h3>
-      <p>Open-ended building, voxel worlds.</p>
-    </div>
-    <div class="category">
-      <h3>VR / AR Ready</h3>
-      <p>WebXR titles for headset owners.</p>
+      <ul><li><a href="torchtd.html">Torch TD</a></li></ul>
     </div>
   </section>
 </body>

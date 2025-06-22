@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Escape School Obby</title>
+  <link rel="stylesheet" href="style.css">
   <style>
     html,body{
       margin:0;
@@ -16,7 +17,9 @@
       align-items:center;
       font-family:'Segoe UI', Arial, sans-serif;
     }
-    canvas{
+    .iso-container{perspective:800px;}
+  .iso-container canvas{transform:rotateX(60deg) rotateZ(45deg);transform-style:preserve-3d;}
+  canvas{
       background:linear-gradient(#fff,#eee);
       border:2px solid #333;
       box-shadow:0 20px 30px rgba(0,0,0,0.3);
@@ -46,9 +49,12 @@
   </style>
 </head>
 <body>
+  <a href="baseline.html" class="back-link">← Games</a>
+  <div class="iso-container">
   <canvas id="gameCanvas" width="600" height="600"></canvas>
   <div id="gameOver">You got caught! Game Over!</div>
   <button id="restart">Start Obby</button>
+</div>
 <script>
 const canvas=document.getElementById('gameCanvas');
 const ctx=canvas.getContext('2d');
