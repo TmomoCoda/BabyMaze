@@ -3,37 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Baby Maze Hunt</title>
+  <title>3D Isometric Maze Hunt</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #faf3e0;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'Segoe UI', Arial, sans-serif;
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      overflow:hidden;
+      background:linear-gradient(135deg,#1a2a6c,#b21f1f,#1a2a6c);
+      height:100vh;display:flex;justify-content:center;align-items:center;
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      perspective:1000px;
     }
-    /* inline styles trimmed; see style.css for game visuals */
+    #game-container{position:relative;width:90vmin;height:90vmin;max-width:800px;max-height:800px;}
+    #game-board{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotateX(60deg) rotateZ(-45deg);transform-style:preserve-3d;width:100%;height:100%;}
+    .tile{position:absolute;transform-style:preserve-3d;transition:transform .3s ease;}
+    .tile-top{position:absolute;width:100%;height:100%;background:#f5f5dc;transform:translateZ(16px);border:1px solid #d4af37;box-shadow:inset 0 0 10px rgba(0,0,0,0.2);}
+    .tile-side{position:absolute;background:#8b4513;width:100%;height:16px;bottom:0;}
+    .tile-side.front{transform:rotateX(90deg) translateY(8px) translateZ(8px);}
+    .tile-side.back{transform:rotateX(90deg) rotateY(180deg) translateY(8px) translateZ(-8px);}
+    .tile-side.right{transform:rotateX(90deg) rotateY(90deg) translateY(8px) translateZ(8px);width:16px;height:16px;right:0;}
+    .tile-side.left{transform:rotateX(90deg) rotateY(-90deg) translateY(8px) translateZ(8px);width:16px;height:16px;left:0;}
+    .wall .tile-top{background:#5d4037;transform:translateZ(32px);}
+    .wall .tile-side{height:32px;background:#4e342e;}
+    .wall .tile-side.front{transform:rotateX(90deg) translateY(16px) translateZ(16px);}
+    .wall .tile-side.back{transform:rotateX(90deg) rotateY(180deg) translateY(16px) translateZ(-16px);}
+    .wall .tile-side.right{transform:rotateX(90deg) rotateY(90deg) translateY(16px) translateZ(16px);width:16px;height:32px;}
+    .wall .tile-side.left{transform:rotateX(90deg) rotateY(-90deg) translateY(16px) translateZ(16px);width:16px;height:32px;}
+    .water{opacity:.7;}
+    .water .tile-top{background:#1e88e5;animation:water-ripple 2s infinite alternate;}
+    @keyframes water-ripple{0%{box-shadow:inset 0 0 15px rgba(0,0,255,0.5);}100%{box-shadow:inset 0 0 25px rgba(0,0,255,0.8);}}
+    .entity{position:absolute;width:100%;height:100%;display:flex;justify-content:center;align-items:center;font-size:32px;z-index:10;transform:translateZ(20px);transition:transform .2s ease;pointer-events:none;text-shadow:0 0 5px rgba(0,0,0,0.5);}
+    .player{color:#4caf50;animation:float 2s infinite ease-in-out;}
+    .baby{color:#ff9800;animation:float 2s infinite ease-in-out .5s;}
+    .goal{color:#e91e63;animation:pulse 1.5s infinite alternate;}
+    @keyframes float{0%,100%{transform:translateZ(20px);}50%{transform:translateZ(25px);}}
+    @keyframes pulse{0%{transform:translateZ(20px) scale(1);}100%{transform:translateZ(20px) scale(1.1);}}
+    #ui-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;}
+    .message-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:2rem 3rem;border-radius:15px;text-align:center;font-size:2rem;box-shadow:0 0 30px rgba(255,215,0,0.5);border:2px solid #d4af37;display:none;pointer-events:auto;z-index:30;}
+    .message-box h2{margin-bottom:1.5rem;font-size:2.5rem;color:#ffd700;}
+    .btn{background:linear-gradient(to bottom,#4caf50,#2e7d32);color:#fff;border:none;padding:.8rem 1.5rem;font-size:1.2rem;border-radius:50px;cursor:pointer;margin:.5rem;transition:all .3s ease;box-shadow:0 5px 15px rgba(0,0,0,0.3);pointer-events:auto;}
+    .btn:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.4);background:linear-gradient(to bottom,#66bb6a,#388e3c);}
+    .btn:active{transform:translateY(1px);box-shadow:0 3px 10px rgba(0,0,0,0.3);}
+    .btn.blue{background:linear-gradient(to bottom,#2196f3,#0d47a1);}
+    .btn.blue:hover{background:linear-gradient(to bottom,#42a5f5,#1565c0);}
+    .btn.orange{background:linear-gradient(to bottom,#ff9800,#ef6c00);}
+    .btn.orange:hover{background:linear-gradient(to bottom,#ffa726,#f57c00);}
+    #controls{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:15px;border-radius:15px;display:flex;gap:15px;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.1);}
+    #controls .btn{width:50px;height:50px;display:flex;justify-content:center;align-items:center;font-size:24px;}
+    #hud{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.6);color:white;padding:15px;border-radius:10px;font-size:1.2rem;display:flex;flex-direction:column;gap:10px;min-width:200px;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.1);}
+    .hud-item{display:flex;justify-content:space-between;}
+    .progress-bar{height:10px;background:rgba(255,255,255,0.2);border-radius:5px;overflow:hidden;margin-top:5px;}
+    .progress-fill{height:100%;background:linear-gradient(to right,#4caf50,#8bc34a);border-radius:5px;width:70%;}
+    #minimap{position:absolute;top:20px;right:20px;width:120px;height:120px;background:rgba(0,0,0,0.6);border:2px solid #d4af37;border-radius:10px;z-index:20;backdrop-filter:blur(5px);}
+    .grid-lines{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+    .grid-line{position:absolute;background:rgba(255,255,255,0.1);}
   </style>
 </head>
 <body>
-  <a href="baseline.html" class="back-link">← Games</a>
-  <div id="gameBoard"></div>
-  <div id="uiOverlay">
-    <div id="gameOver" class="hidden">😭 Baby is crying! Game Over!</div>
-    <div id="success" class="hidden">You Succeeded!</div>
-    <button id="restart">Start Game</button>
-    <button id="nextStage" class="hidden">Start Stage 2</button>
-    <button id="nextStage3" class="hidden">Start Stage 3</button>
+  <div id="game-container">
+    <div id="game-board"></div>
+    <div id="ui-overlay">
+      <div id="welcome" class="message-box">
+        <h2>🌠 Baby Maze Hunt 🌠</h2>
+        <p>Guide the parent to rescue the baby<br>before the baby starts crying!</p>
+        <button id="start-game" class="btn">Start Game</button>
+      </div>
+      <div id="game-over" class="message-box">
+        <h2>😭 Game Over!</h2>
+        <p>The baby started crying...</p>
+        <button id="restart" class="btn">Try Again</button>
+      </div>
+      <div id="success" class="message-box">
+        <h2>🎉 You Saved the Baby! 🎉</h2>
+        <p>Congratulations on completing the maze!</p>
+        <button id="next-stage" class="btn blue">Next Stage</button>
+        <button id="next-stage3" class="btn orange">Final Stage</button>
+      </div>
+      <div id="hud">
+        <div class="hud-item"><span>Stage:</span><span id="stage-display">1</span></div>
+        <div class="hud-item"><span>Baby's Patience:</span><span id="patience-display">70%</span></div>
+        <div class="progress-bar"><div id="patience-bar" class="progress-fill"></div></div>
+      </div>
+      <div id="minimap"></div>
+      <div id="controls">
+        <button class="btn" id="up">↑</button>
+        <div>
+          <button class="btn" id="left">←</button>
+          <button class="btn" id="down">↓</button>
+          <button class="btn" id="right">→</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <script src="isometric.js"></script>
+  <script src="babymaze.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+    if('serviceWorker' in navigator){
+      window.addEventListener('load',()=>{
         navigator.serviceWorker.register('/sw.js');
       });
     }
