@@ -30,6 +30,7 @@ const MOTHER_EMOJI = '\uD83E\uDD1D';
 
 let tileSize = LOGIC_TILE; // convenience
 let baby, food, mothers, timerId, gameOver;
+let tiles = [];
 let score = 0;
 let ammo = 0;
 let timeStart = 0;
@@ -59,28 +60,29 @@ const motherContainer = document.createElement('div');
 motherContainer.id = 'mothers';
 board.appendChild(motherContainer);
 
-function boardToIso(x, y){
-  return {
-    x: (x - y) * TILE_W / 2 + BOARD_OFFSET_X,
-    y: (x + y) * TILE_H / 2
-  };
+function gridToIso(col, row){
+  const isoX = (col - row) * TILE_W/2;
+  const isoY = (col + row) * TILE_H/4;
+  return [isoX, isoY];
 }
 
-function centerIso(x, y){
-  const p = boardToIso(x, y);
-  return { x: p.x + TILE_W / 2, y: p.y + TILE_H / 2 };
+function centerIso(col, row){
+  const [x, y] = gridToIso(col, row);
+  return { x: x + BOARD_OFFSET_X + TILE_W / 2, y: y + TILE_H / 2 };
 }
 
 function createTiles(){
   board.innerHTML = '';
+  tiles = [];
   for(let y=0; y<GRID.length; y++){
     for(let x=0; x<GRID[y].length; x++){
       const tile = document.createElement('div');
       tile.className = 'tile ' + (GRID[y][x] ? 'wall' : 'floor');
-      const pos = boardToIso(x, y);
-      tile.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-      tile.style.zIndex = x + y;
-      board.appendChild(tile);
+      const [isoX, isoY] = gridToIso(x, y);
+      tile.style.transform = `translate3d(${isoX + BOARD_OFFSET_X}px, ${isoY}px, 0) rotateX(60deg) rotateZ(45deg)`;
+      tile.dataset.row = y;
+      tile.dataset.col = x;
+      tiles.push(tile);
     }
   }
   board.appendChild(playerEl);
@@ -105,13 +107,14 @@ function init(){
   score = 0;
   ammo = 0;
   gameOver = false;
-  gameOverEl.style.display = 'none';
-  restartBtn.style.display = 'none';
-  successEl.style.display = 'none';
-  nextStageBtn.style.display = 'none';
-  nextStage3Btn.style.display = 'none';
+  gameOverEl.classList.add('hidden');
+  restartBtn.classList.add('hidden');
+  successEl.classList.add('hidden');
+  nextStageBtn.classList.add('hidden');
+  nextStage3Btn.classList.add('hidden');
   clearTimeout(timerId);
   timerId = setTimeout(endGame, 13000);
+  renderScene();
   requestAnimationFrame(loop);
 }
 
@@ -148,29 +151,43 @@ function update(){
   }
 }
 
-function draw(){
-  tick++;
-  const bIso = centerIso(baby.x / tileSize, baby.y / tileSize);
-  const bounceBaby = Math.sin(tick/10)*4;
-  playerEl.style.transform = `translate(${bIso.x}px, ${bIso.y - TILE_H + bounceBaby}px) rotateX(60deg) rotateZ(45deg)`;
-  playerEl.style.zIndex = Math.floor(baby.x / tileSize + baby.y / tileSize) + 1;
+function renderScene(){
+  board.innerHTML = '';
+  const items = tiles.map(t => ({
+    row: parseInt(t.dataset.row,10),
+    col: parseInt(t.dataset.col,10),
+    el: t
+  }));
 
-  const fIso = centerIso(food.x / tileSize, food.y / tileSize);
+  const babyRow = baby.y / tileSize;
+  const babyCol = baby.x / tileSize;
+  const [bIsoX, bIsoY] = gridToIso(babyCol, babyRow);
+  const bounceBaby = Math.sin(tick/10)*4;
+  playerEl.style.transform = `translate3d(${bIsoX + BOARD_OFFSET_X}px, ${bIsoY - TILE_H + bounceBaby}px, 5px) rotateX(60deg) rotateZ(45deg)`;
+  items.push({row: babyRow, col: babyCol, el: playerEl});
+
+  const foodRow = food.y / tileSize;
+  const foodCol = food.x / tileSize;
+  const [fIsoX, fIsoY] = gridToIso(foodCol, foodRow);
   const bounceFood = Math.sin(tick/10 + 1)*4;
-  foodEl.style.transform = `translate(${fIso.x}px, ${fIso.y - TILE_H/2 + bounceFood}px) rotateX(60deg) rotateZ(45deg)`;
-  foodEl.style.zIndex = Math.floor(food.x / tileSize + food.y / tileSize) + 1;
+  foodEl.style.transform = `translate3d(${fIsoX + BOARD_OFFSET_X}px, ${fIsoY - TILE_H/2 + bounceFood}px, 5px) rotateX(60deg) rotateZ(45deg)`;
+  items.push({row: foodRow, col: foodCol, el: foodEl});
+
+  items.sort((a,b)=> (a.row + a.col) - (b.row + b.col));
+  items.forEach(i => board.appendChild(i.el));
 }
 
 function loop(){
   update();
-  draw();
+  tick++;
+  renderScene();
   if(!gameOver) requestAnimationFrame(loop);
 }
 
 function endGame(){
   gameOver = true;
-  gameOverEl.style.display = 'block';
-  restartBtn.style.display = 'block';
+  gameOverEl.classList.remove('hidden');
+  restartBtn.classList.remove('hidden');
 }
 
 board.addEventListener('click', e => {
@@ -179,8 +196,8 @@ board.addEventListener('click', e => {
   const sx = (e.clientX - rect.left) / (parseFloat(board.style.transform.replace(/scale\(([^)]+)\)/,'$1')) || 1);
   const sy = (e.clientY - rect.top) / (parseFloat(board.style.transform.replace(/scale\(([^)]+)\)/,'$1')) || 1);
   const ox = sx - BOARD_OFFSET_X;
-  const gx = (sy / (TILE_H/2) + ox / (TILE_W/2)) / 2;
-  const gy = (sy / (TILE_H/2) - ox / (TILE_W/2)) / 2;
+  const gx = (sy / (TILE_H/4) + ox / (TILE_W/2)) / 2;
+  const gy = (sy / (TILE_H/4) - ox / (TILE_W/2)) / 2;
   const px = gx * tileSize + tileSize/2;
   const py = gy * tileSize + tileSize/2;
   const dx = px - baby.x;
