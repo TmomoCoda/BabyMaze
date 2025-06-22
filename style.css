@@ -204,3 +204,61 @@ button:focus {
   transform:rotateX(60deg) rotateZ(45deg);
   transform-style:preserve-3d;
 }
+
+/* Isometric game board styles */
+#gameBoard {
+  position: relative;
+  transform-origin: top left;
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+
+.tile {
+  position: absolute;
+  width: 64px;
+  height: 32px;
+  transform-style: preserve-3d;
+  background: #ddd;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.tile:after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 5%;
+  width: 90%;
+  height: 10px;
+  background: rgba(0,0,0,0.2);
+  transform: rotateX(60deg);
+}
+
+.entity {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  user-select: none;
+  transform-origin: bottom center;
+  transform: translate3d(0,0,5px);
+  transition: transform 0.2s;
+}
+
+#uiOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+#gameOver, #success, #restart,
+#nextStage, #nextStage3 {
+  margin: 0;
+}
