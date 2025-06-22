@@ -33,6 +33,7 @@ let baby, food, mothers, timerId, gameOver;
 let score = 0;
 let ammo = 0;
 let timeStart = 0;
+let tick = 0;
 
 // DOM elements
 const board = document.getElementById('gameBoard');
@@ -148,12 +149,15 @@ function update(){
 }
 
 function draw(){
+  tick++;
   const bIso = centerIso(baby.x / tileSize, baby.y / tileSize);
-  playerEl.style.transform = `translate(${bIso.x}px, ${bIso.y - TILE_H}px)`;
+  const bounceBaby = Math.sin(tick/10)*4;
+  playerEl.style.transform = `translate(${bIso.x}px, ${bIso.y - TILE_H + bounceBaby}px) rotateX(60deg) rotateZ(45deg)`;
   playerEl.style.zIndex = Math.floor(baby.x / tileSize + baby.y / tileSize) + 1;
 
   const fIso = centerIso(food.x / tileSize, food.y / tileSize);
-  foodEl.style.transform = `translate(${fIso.x}px, ${fIso.y - TILE_H/2}px)`;
+  const bounceFood = Math.sin(tick/10 + 1)*4;
+  foodEl.style.transform = `translate(${fIso.x}px, ${fIso.y - TILE_H/2 + bounceFood}px) rotateX(60deg) rotateZ(45deg)`;
   foodEl.style.zIndex = Math.floor(food.x / tileSize + food.y / tileSize) + 1;
 }
 

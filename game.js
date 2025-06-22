@@ -270,14 +270,17 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
 
+      const t = Date.now() / 200;
+
       // draw cells
       for (let y = 0; y < GRID.length; y++) {
         for (let x = 0; x < GRID[y].length; x++) {
           if (GRID[y][x] === 1) {
+            const b = Math.sin(t + x + y) * 4;
             ctx.font = `${TILE * 0.8}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('🌳', x * TILE + TILE / 2, y * TILE + TILE / 2);
+            ctx.fillText('🌳', x * TILE + TILE / 2, y * TILE + TILE / 2 - b);
           } else {
             ctx.fillStyle = '#ddd';
             ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
@@ -292,23 +295,26 @@
       }
       // draw food as emoji
       if (!gameOver) {
+        const bFood = Math.sin(t + food.x + food.y) * 4;
         ctx.font = `${food.r * 2}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(currentFoodEmoji, food.x, food.y);
+        ctx.fillText(currentFoodEmoji, food.x, food.y - bFood);
       }
       // draw baby as emoji
+      const bBaby = Math.sin(t + baby.x + baby.y) * 4;
       ctx.font = `${baby.r * 2}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(babyEmoji, baby.x, baby.y);
+      ctx.fillText(babyEmoji, baby.x, baby.y - bBaby);
 
       if (mothers.length > 0) {
         for (const m of mothers) {
+          const bM = Math.sin(t + m.x + m.y) * 4;
           ctx.font = `${m.r * 2}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(MOTHER_EMOJI, m.x, m.y);
+          ctx.fillText(MOTHER_EMOJI, m.x, m.y - bM);
         }
       }
 
